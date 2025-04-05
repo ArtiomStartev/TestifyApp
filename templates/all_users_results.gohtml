@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All Users - Admin View</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        function toggleUser(id) {
+            document.getElementById('user-' + id).classList.toggle('hidden');
+        }
+    </script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    {{ template "navbar" . }}
+
+    <div class="max-w-5xl mx-auto mt-12 px-4">
+        <h1 class="text-3xl font-bold text-blue-700 text-center mb-8">All Users</h1>
+
+        {{ if .UsersResults }}
+            <div class="space-y-6">
+                {{ range $userIndex, $user := .UsersResults }}
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                        <div class="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50"
+                             onclick="toggleUser('{{ $user.UserID }}')">
+                            <div>
+                                <h2 class="text-lg font-semibold text-gray-800">{{ $user.Email }}</h2>
+                                <p class="text-sm text-gray-500">User ID: {{ $user.UserID }}</p>
+                            </div>
+                            <svg class="w-6 h-6 text-gray-500 transition-transform transform rotate-0"
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+
+                        <div id="user-{{ $user.UserID }}" class="hidden border-t border-gray-200">
+                            {{ if $user.Sessions }}
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+                                        <thead class="bg-gray-100 text-gray-700 font-semibold">
+                                        <tr>
+                                            <th class="px-6 py-4">Attempt #</th>
+                                            <th class="px-6 py-4">Score</th>
+                                            <th class="px-6 py-4">Result</th>
+                                            <th class="px-6 py-4">Duration</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-200">
+                                        {{ range $i, $res := $user.Sessions }}
+                                            <tr class="hover:bg-gray-50">
+                                                <td class="px-6 py-4 font-medium">#{{ inc $i }}</td>
+                                                <td class="px-6 py-4">{{ $res.Score }}</td>
+                                                <td class="px-6 py-4">
+                                                    {{ if $res.Passed }}
+                                                        <span class="text-green-600 font-semibold">Passed</span>
+                                                    {{ else }}
+                                                        <span class="text-red-600 font-semibold">Failed</span>
+                                                    {{ end }}
+                                                </td>
+                                                <td class="px-6 py-4">{{ $res.DurationSeconds }} seconds</td>
+                                            </tr>
+                                        {{ end }}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {{ else }}
+                                <div class="px-6 py-4 text-gray-500">No test results available.</div>
+                            {{ end }}
+                        </div>
+                    </div>
+                {{ end }}
+            </div>
+        {{ else }}
+            <p class="text-center text-gray-600">No users found.</p>
+        {{ end }}
+    </div>
+</body>
+</html>

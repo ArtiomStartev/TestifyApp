@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        let currentIndex = 0;
+        let totalQuestions = {{ len .Questions }};
+        let timerSeconds = 0;
+
+        function showQuestion(index) {
+            const all = document.querySelectorAll(".question-block");
+            all.forEach((q, i) => q.classList.toggle("hidden", i !== index));
+
+            document.getElementById("prevBtn").disabled = index === 0;
+            document.getElementById("nextBtn").style.display = index === totalQuestions - 1 ? "none" : "inline-block";
+            document.getElementById("finishBtn").style.display = index === totalQuestions - 1 ? "inline-block" : "none";
+        }
+
+        function startTimer() {
+            setInterval(() => {
+                timerSeconds++;
+                const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+                const secs = (timerSeconds % 60).toString().padStart(2, '0');
+                document.getElementById("timer").innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function nextQuestion() {
+            if (currentIndex < totalQuestions - 1) {
+                currentIndex++;
+                showQuestion(currentIndex);
+            }
+        }
+
+        function prevQuestion() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                showQuestion(currentIndex);
+            }
+        }
+
+        function finishTest() {
+            toggleLoadingButton("finishBtn", true);
+
+            const payload = {
+                user_id: {{ .UserID }},
+                answers: collectAnswers(),
+                time_taken_seconds: timerSeconds,
+            };
+
+            fetch('/submit-test', {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            }).then((response) => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    console.error("Error submitting test: ", response);
+                    alert("Something went wrong!");
+                    toggleLoadingButton("finishBtn", false);
+                }
+            }).catch((error) => {
+                console.error("Error submitting test: ", error);
+                alert("Something went wrong!");
+                toggleLoadingButton("finishBtn", false);
+            });
+        }
+
+        function toggleLoadingButton(btnId, isLoading) {
+            const btn = document.getElementById(btnId);
+            const text = btn.querySelector("span");
+            const spinner = btn.querySelector("svg");
+
+            btn.disabled = isLoading;
+            text.classList.toggle("hidden", isLoading);
+            spinner.classList.toggle("hidden", !isLoading);
+        }
+
+        function collectAnswers() {
+            const answers = {};
+            document.querySelectorAll('.question-block').forEach((block, index) => {
+                answers[index + 1] = Array.from(block.querySelectorAll('input:checked')).map((input) => input.value);
+            });
+            return answers;
+        }
+
+        window.onload = function () {
+            showQuestion(0);
+            startTimer();
+        };
+    </script>
+</head>
+<body class="bg-gray-100 min-h-screen text-gray-800">
+    {{ template "navbar" . }}
+
+    <div class="flex items-center justify-center min-h-[calc(100vh-64px)] px-4">
+        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-2xl mt-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold">AWS Knowledge Test</h1>
+                <div class="text-gray-500 text-sm">Time: <span id="timer">00:00</span></div>
+            </div>
+
+            {{ range $i, $q := .Questions }}
+                <div class="question-block hidden">
+                    <h2 class="text-xl font-semibold mb-4">Q{{ inc $i }}. {{ $q.Text }}</h2>
+
+                    {{ if eq $q.Type "single" }}
+                        {{ range $q.Answers }}
+                            <label class="block mb-2">
+                                <input type="radio" name="q{{ $q.ID }}" value="{{ .ID }}" class="mr-2">
+                                {{ .Text }}
+                            </label>
+                        {{ end }}
+                    {{ else if eq $q.Type "multiple" }}
+                        {{ range $q.Answers }}
+                            <label class="block mb-2">
+                                <input type="checkbox" name="q{{ $q.ID }}" value="{{ .ID }}" class="mr-2">
+                                {{ .Text }}
+                            </label>
+                        {{ end }}
+                    {{ end }}
+                </div>
+            {{ end }}
+
+            <div class="flex justify-between mt-6">
+                <button id="prevBtn"
+                        onclick="prevQuestion()"
+                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 disabled:opacity-50">
+                    Back
+                </button>
+                <div>
+                    <button id="nextBtn"
+                            onclick="nextQuestion()"
+                            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Next
+                    </button>
+                    <button id="finishBtn"
+                            onclick="finishTest()"
+                            class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center justify-center gap-2 hidden">
+                        <span id="finishText">Finish Test</span>
+                        <svg id="finishSpinner" class="w-5 h-5 text-white animate-spin hidden" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
