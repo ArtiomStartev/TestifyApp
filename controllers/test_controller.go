@@ -17,7 +17,7 @@ type SubmitTestRequest struct {
 	TimeTakenSeconds int                 `json:"time_taken_seconds"`
 }
 
-type UsersResults struct {
+type UserResults struct {
 	UserID   uint   `json:"user_id"`
 	Email    string `json:"email"`
 	Sessions []models.UserTestSession
@@ -33,6 +33,7 @@ func NewTestController(db *gorm.DB) *TestController {
 
 func (tc *TestController) StartTest(c *fiber.Ctx) error {
 	userID := c.Locals("user_id") // Retrieved from middleware
+
 	var user models.User
 	var questions []models.Question
 
@@ -180,13 +181,13 @@ func (tc *TestController) AllUsersResults(c *fiber.Ctx) error {
 		return helpers.HandleError(c, fiber.StatusInternalServerError, err, "Failed to fetch users")
 	}
 
-	var usersResults []UsersResults
+	var usersResults []UserResults
 	for _, user := range users {
 		var sessions []models.UserTestSession
 		if err := tc.DB.Where("user_id = ?", user.ID).Find(&sessions).Error; err != nil {
 			return helpers.HandleError(c, fiber.StatusInternalServerError, err, "Failed to fetch test sessions")
 		}
-		usersResults = append(usersResults, UsersResults{
+		usersResults = append(usersResults, UserResults{
 			UserID:   user.ID,
 			Email:    user.Email,
 			Sessions: sessions,

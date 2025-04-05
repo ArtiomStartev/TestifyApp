@@ -9,10 +9,11 @@ import (
 
 func AdminMiddleware(db *gorm.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		userID := c.Locals("user_id")
+		userID := c.Locals("user_id") // Retrieved from middleware
+
 		var user models.User
 		if err := db.First(&user, userID).Error; err != nil {
-			return helpers.HandleError(c, fiber.StatusUnauthorized, err, "Unauthorized")
+			return helpers.HandleError(c, fiber.StatusNotFound, err, "User not found")
 		}
 
 		if !user.IsAdmin {
