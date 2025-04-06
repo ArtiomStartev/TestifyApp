@@ -81,7 +81,7 @@ func (ac *AuthController) Login(c *fiber.Ctx) error {
 		Value:    token,
 		Expires:  time.Now().Add(24 * time.Hour),
 		HTTPOnly: true,
-		Secure:   true, // Set to true in production
+		//Secure:   true, // Set to true in production
 		SameSite: "Strict",
 	})
 
@@ -94,7 +94,7 @@ func (ac *AuthController) Logout(c *fiber.Ctx) error {
 		Value:    "",
 		Expires:  time.Now().Add(-1 * time.Hour),
 		HTTPOnly: true,
-		Secure:   true, // Set to true in production
+		//Secure:   true, // Set to true in production
 		SameSite: "Strict",
 	})
 
